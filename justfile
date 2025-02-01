@@ -9,7 +9,7 @@ embed-all:
     just embed res/*.png
 
 embed IMAGE: tools
-    ./embed {{IMAGE}}
+    ./embed {{IMAGE}} 
 
 clean:
     rm embed || true
