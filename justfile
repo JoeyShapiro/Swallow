@@ -12,6 +12,6 @@ embed IMAGE: tools
     ./embed {{IMAGE}} 
 
 clean:
-    rm embed || true
-    rm Swallow || true
-    rm res/*.h
+    rm embed &> /dev/null || true
+    rm Swallow &> /dev/null || true
+    rm res/*.h &> /dev/null || true
