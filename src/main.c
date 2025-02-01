@@ -1,4 +1,5 @@
 #include "raylib.h"
+#include "../res/BirdSprite.h" // 33kb
 
 #define SCALE 4
 
@@ -15,7 +16,22 @@ int main(void)
     InitWindow(screenWidth, screenHeight, "Swallow");
     
     // scale texture to 2x
-    Texture2D texture = LoadTexture("res/BirdSprite.png");
+    // Texture2D texture = LoadTexture("res/BirdSprite.png");
+    
+
+    // Image img = LoadImage("res/BirdSprite.png");
+    // ExportImageAsCode(img, "res/BirdSprite.h");
+
+    Image image = {
+        .data = BIRDSPRITE_DATA,
+        .width = BIRDSPRITE_WIDTH,
+        .height = BIRDSPRITE_HEIGHT,
+        .format = BIRDSPRITE_FORMAT,
+        .mipmaps = 1
+    };
+
+    Texture2D texture = LoadTextureFromImage(image);
+    // TEXTURE_FILTER_NEARESTNEIGHBOR;
     SetTextureFilter(texture, TEXTURE_FILTER_ANISOTROPIC_4X);
 
     Vector2 position = { 350.0f, 280.0f };
