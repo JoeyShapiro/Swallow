@@ -6,10 +6,11 @@ tools:
     clang -framework IOKit -framework Cocoa lib/libraylib.a embed.c -o embed
 
 embed-all:
-    just embed res/*.png
+    just embed res/BirdSprite.png
+    just embed res/Fruit.png
 
 embed IMAGE: tools
-    ./embed {{IMAGE}} 
+    ./embed {{IMAGE}}
 
 clean:
     rm embed &> /dev/null || true
