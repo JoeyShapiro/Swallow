@@ -63,10 +63,8 @@ int main(void)
         {
             framesCounter = 0;
             currentFrame++;
-            currentFrame2++;
 
             if (currentFrame > 1) currentFrame = 0;
-            if (currentFrame2 > 7) currentFrame2 = 0;
 
             frameRec.x = (float)currentFrame*16;
             frameRec2.x = (float)currentFrame2*16;
@@ -75,14 +73,13 @@ int main(void)
         // Get axis values
         float leftStickX = GetGamepadAxisMovement(gamepad, GAMEPAD_AXIS_LEFT_X);
         float leftStickY = GetGamepadAxisMovement(gamepad, GAMEPAD_AXIS_LEFT_Y);
-        float rightStickX = GetGamepadAxisMovement(gamepad, GAMEPAD_AXIS_RIGHT_X);
-        float rightStickY = GetGamepadAxisMovement(gamepad, GAMEPAD_AXIS_RIGHT_Y);
 
         float rotation = atan2f(-leftStickY, -leftStickX) * RAD2DEG;
         frameRec2.height = leftStickX > 0 ? -16 : 16;
 
-        float leftTrigger = GetGamepadAxisMovement(gamepad, GAMEPAD_AXIS_LEFT_TRIGGER);
         float rightTrigger = GetGamepadAxisMovement(gamepad, GAMEPAD_AXIS_RIGHT_TRIGGER);
+        currentFrame2 = (((1 + rightTrigger)/2)*4); // does it all automatically
+        frameRec2.x = (float)currentFrame2*16;
 
         // position1.y += gravity;
 
@@ -106,15 +103,14 @@ int main(void)
             ClearBackground(RAYWHITE);
             DrawTexturePro(texture, frameRec, (Rectangle){position.x, position.y, 16*SCALE, 16*SCALE}, (Vector2){0, 0}, 0, WHITE);
             DrawTexturePro(texture, frameRec2, dest, (Vector2){16*SCALE/2, 16*SCALE/2}, rotation, WHITE);
-            DrawText("Congrats! You created your first window!", 190, 200, 20, LIGHTGRAY);
+
             if (IsGamepadAvailable(gamepad)) {
-                DrawText("Gamepad connected", 190, 220, 20, LIGHTGRAY);
                 DrawText(GetGamepadName(gamepad), 190, 240, 20, LIGHTGRAY);
             } else {
                 DrawText("Gamepad not connected", 190, 220, 20, LIGHTGRAY);
             }
 
-            DrawText(TextFormat("Left Stick X: %02.02f", leftStickX), 190, 260, 20, LIGHTGRAY);
+            DrawText(TextFormat("Button: %02.02f", rightTrigger), 190, 260, 20, LIGHTGRAY);
 
             if (IsGamepadButtonDown(gamepad, GAMEPAD_BUTTON_MIDDLE_RIGHT)) DrawTriangle((Vector2){ 436, 168 }, (Vector2){ 436, 185 }, (Vector2){ 464, 177 }, RED);
             if (IsGamepadButtonDown(gamepad, GAMEPAD_BUTTON_RIGHT_FACE_UP)) DrawCircle(557, 144, 13, LIME);
@@ -122,9 +118,7 @@ int main(void)
             if (IsGamepadButtonDown(gamepad, GAMEPAD_BUTTON_RIGHT_FACE_DOWN)) DrawCircle(557, 203, 13, VIOLET);
             if (IsGamepadButtonDown(gamepad, GAMEPAD_BUTTON_RIGHT_FACE_LEFT)) DrawCircle(527, 173, 13, PINK);
 
-            DrawRectangle(169, 48, 15, 70, GRAY);
             DrawRectangle(611, 48, 15, 70, GRAY);
-            DrawRectangle(169, 48, 15, (int)(((1 + leftTrigger)/2)*70), RED);
             DrawRectangle(611, 48, 15, (int)(((1 + rightTrigger)/2)*70), RED);
 
         EndDrawing();
