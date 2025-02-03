@@ -1,4 +1,5 @@
 #include "raylib.h"
+#include <math.h>
 #include "../res/BirdSprite.h" // 33kb
 #include "../res/Fruit.h"
 
@@ -45,7 +46,6 @@ int main(void)
     int currentFrame2 = 0;
     float deltaX = 0;
     float deltaY = 0;
-    float rot = 0;
     const int gravity = 1;
 
     int framesCounter = 0;
@@ -78,15 +78,26 @@ int main(void)
         float rightStickX = GetGamepadAxisMovement(gamepad, GAMEPAD_AXIS_RIGHT_X);
         float rightStickY = GetGamepadAxisMovement(gamepad, GAMEPAD_AXIS_RIGHT_Y);
 
+        float rotation = atan2f(-leftStickY, -leftStickX) * RAD2DEG;
+        frameRec2.height = leftStickX > 0 ? -16 : 16;
+
         float leftTrigger = GetGamepadAxisMovement(gamepad, GAMEPAD_AXIS_LEFT_TRIGGER);
         float rightTrigger = GetGamepadAxisMovement(gamepad, GAMEPAD_AXIS_RIGHT_TRIGGER);
 
-        position1.y += gravity;
+        // position1.y += gravity;
 
         if (IsGamepadButtonDown(gamepad, GAMEPAD_BUTTON_RIGHT_FACE_DOWN)) {
             position1.x += leftStickX * 2;
             position1.y += leftStickY * 2;
         }
+
+        // (Rectangle){leftStickX > 0 ? position1.x+8 : position1.x - 8, position1.y, 16*SCALE, 16*SCALE};
+        Rectangle dest = {
+            .x = position1.x,
+            .y = position1.y,
+            .width = 16*SCALE,
+            .height = 16*SCALE,
+        };
         
         // Draw
         //----------------------------------------------------------------------------------
@@ -94,7 +105,7 @@ int main(void)
 
             ClearBackground(RAYWHITE);
             DrawTexturePro(texture, frameRec, (Rectangle){position.x, position.y, 16*SCALE, 16*SCALE}, (Vector2){0, 0}, 0, WHITE);
-            DrawTexturePro(texture, frameRec2, (Rectangle){position1.x, position1.y, 16*SCALE, 16*SCALE}, (Vector2){0, 0}, 0, WHITE);
+            DrawTexturePro(texture, frameRec2, dest, (Vector2){16*SCALE/2, 16*SCALE/2}, rotation, WHITE);
             DrawText("Congrats! You created your first window!", 190, 200, 20, LIGHTGRAY);
             if (IsGamepadAvailable(gamepad)) {
                 DrawText("Gamepad connected", 190, 220, 20, LIGHTGRAY);
