@@ -47,6 +47,15 @@ int main(void)
     float deltaX = 0;
     float deltaY = 0;
     const int gravity = 1;
+    float lastRightTrigger = 0;
+    float wing_area = 0.3;
+    float k = 0.1;
+    float lift = 0;
+    float thrust = 0;
+    Vector2 momentum = { 0, 0 };
+
+    float fmin = MAXFLOAT;
+    float fmax = -MAXFLOAT;
 
     int framesCounter = 0;
     SetTargetFPS(60);               // Set our game to run at 60 frames-per-second
@@ -74,8 +83,11 @@ int main(void)
         float leftStickX = GetGamepadAxisMovement(gamepad, GAMEPAD_AXIS_LEFT_X);
         float leftStickY = GetGamepadAxisMovement(gamepad, GAMEPAD_AXIS_LEFT_Y);
 
-        float rotation = atan2f(-leftStickY, -leftStickX) * RAD2DEG;
+        float rotation = atan2f(-leftStickY, -leftStickX)+PI;
         frameRec2.height = leftStickX > 0 ? -16 : 16;
+
+        if (rotation > fmax) fmax = rotation;
+        if (rotation < fmin) fmin = rotation;
 
         float rightTrigger = GetGamepadAxisMovement(gamepad, GAMEPAD_AXIS_RIGHT_TRIGGER);
         currentFrame2 = (((1 + rightTrigger)/2)*4); // does it all automatically
@@ -83,10 +95,30 @@ int main(void)
 
         // position1.y += gravity;
 
-        if (IsGamepadButtonDown(gamepad, GAMEPAD_BUTTON_RIGHT_FACE_DOWN)) {
-            position1.x += leftStickX * 2;
-            position1.y += leftStickY * 2;
-        }
+        float deltaTrigger = 5; //(rightTrigger - lastRightTrigger) * 10;
+
+        float Force_Total = k * (deltaTrigger * deltaTrigger) * wing_area;
+        thrust = Force_Total * cos(rotation);
+        lift = Force_Total * sin(rotation);
+
+        // if (rightTrigger < lastRightTrigger) {
+        //     position1.x += leftStickX * 2;
+        //     position1.y += leftStickY * 2;
+        // }
+        
+        momentum.x = thrust;
+        momentum.y = -lift;
+
+        lastRightTrigger = rightTrigger;
+
+        // position1.x += momentum.x;
+        // position1.y += momentum.y;
+
+        // TODO i flip image, so i have to flip math
+        // it is like in space
+        // is that the correct way to rotate it
+        // yes, i flip on a different axis
+        // they would be upside down, but now they still point correctly
 
         // (Rectangle){leftStickX > 0 ? position1.x+8 : position1.x - 8, position1.y, 16*SCALE, 16*SCALE};
         Rectangle dest = {
@@ -102,7 +134,7 @@ int main(void)
 
             ClearBackground(RAYWHITE);
             DrawTexturePro(texture, frameRec, (Rectangle){position.x, position.y, 16*SCALE, 16*SCALE}, (Vector2){0, 0}, 0, WHITE);
-            DrawTexturePro(texture, frameRec2, dest, (Vector2){16*SCALE/2, 16*SCALE/2}, rotation, WHITE);
+            DrawTexturePro(texture, frameRec2, dest, (Vector2){16*SCALE/2, 16*SCALE/2}, (rotation-PI)*RAD2DEG, WHITE);
 
             if (IsGamepadAvailable(gamepad)) {
                 DrawText(GetGamepadName(gamepad), 190, 240, 20, LIGHTGRAY);
@@ -110,7 +142,15 @@ int main(void)
                 DrawText("Gamepad not connected", 190, 220, 20, LIGHTGRAY);
             }
 
-            DrawText(TextFormat("Button: %02.02f", rightTrigger), 190, 260, 20, LIGHTGRAY);
+            DrawText(TextFormat("trigger: %02.02f", rightTrigger), 0, 0, 20, LIGHTGRAY);
+            DrawText(TextFormat("rotation: %02.02f", (rotation-PI)*RAD2DEG), 0, 24, 20, LIGHTGRAY);
+            DrawText(TextFormat("delta: %02.02f", deltaTrigger), 0, 48, 20, LIGHTGRAY);
+            DrawText(TextFormat("Force (Total): %02.02f", Force_Total), 0, 72, 20, LIGHTGRAY);
+            DrawText(TextFormat("Thrust: %02.02f", thrust), 0, 96, 20, LIGHTGRAY);
+            DrawText(TextFormat("Lift: %02.02f", lift), 0, 120, 20, LIGHTGRAY);
+            DrawText(TextFormat("( %02.02f <-> %02.02f )", fmin, fmax), 0, 144, 20, LIGHTGRAY);
+            DrawText(TextFormat("momentum: (%02.02f, %02.02f)", momentum.x*32, momentum.y*32), 0, 168, 20, LIGHTGRAY);
+            DrawLine(position1.x, position1.y, position1.x+momentum.x*32, position1.y+momentum.y*32, RED);
 
             if (IsGamepadButtonDown(gamepad, GAMEPAD_BUTTON_MIDDLE_RIGHT)) DrawTriangle((Vector2){ 436, 168 }, (Vector2){ 436, 185 }, (Vector2){ 464, 177 }, RED);
             if (IsGamepadButtonDown(gamepad, GAMEPAD_BUTTON_RIGHT_FACE_UP)) DrawCircle(557, 144, 13, LIME);
