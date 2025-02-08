@@ -106,19 +106,13 @@ int main(void)
         //     position1.y += leftStickY * 2;
         // }
         
-        momentum.x = thrust;
-        momentum.y = -lift;
+        momentum.x = leftStickY > 0 ? thrust : -thrust;
+        momentum.y = leftStickY > 0 ? -lift : lift;
 
         lastRightTrigger = rightTrigger;
 
-        // position1.x += momentum.x;
-        // position1.y += momentum.y;
-
-        // TODO i flip image, so i have to flip math
-        // it is like in space
-        // is that the correct way to rotate it
-        // yes, i flip on a different axis
-        // they would be upside down, but now they still point correctly
+        position1.x += momentum.x;
+        position1.y += momentum.y;
 
         // (Rectangle){leftStickX > 0 ? position1.x+8 : position1.x - 8, position1.y, 16*SCALE, 16*SCALE};
         Rectangle dest = {
@@ -150,6 +144,7 @@ int main(void)
             DrawText(TextFormat("Lift: %02.02f", lift), 0, 120, 20, LIGHTGRAY);
             DrawText(TextFormat("( %02.02f <-> %02.02f )", fmin, fmax), 0, 144, 20, LIGHTGRAY);
             DrawText(TextFormat("momentum: (%02.02f, %02.02f)", momentum.x*32, momentum.y*32), 0, 168, 20, LIGHTGRAY);
+
             DrawLine(position1.x, position1.y, position1.x+momentum.x*32, position1.y+momentum.y*32, RED);
 
             if (IsGamepadButtonDown(gamepad, GAMEPAD_BUTTON_MIDDLE_RIGHT)) DrawTriangle((Vector2){ 436, 168 }, (Vector2){ 436, 185 }, (Vector2){ 464, 177 }, RED);
