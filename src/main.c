@@ -46,7 +46,7 @@ int main(void)
     int currentFrame2 = 0;
     float deltaX = 0;
     float deltaY = 0;
-    const int gravity = 1;
+    const float gravity = 0.5;
     float lastRightTrigger = 0;
     float wing_area = 0.3;
     float k = 0.1;
@@ -84,7 +84,7 @@ int main(void)
         float leftStickY = GetGamepadAxisMovement(gamepad, GAMEPAD_AXIS_LEFT_Y);
 
         float rotation = atan2f(-leftStickY, -leftStickX)+PI;
-        frameRec2.height = leftStickY > 0 ? -16 : 16;
+        frameRec2.width = leftStickX > 0 ? -16 : 16;
 
         if (rotation > fmax) fmax = rotation;
         if (rotation < fmin) fmin = rotation;
@@ -111,8 +111,8 @@ int main(void)
 
         lastRightTrigger = rightTrigger;
 
-        position1.x += momentum.x;
-        position1.y += momentum.y;
+        // position1.x += momentum.x;
+        // position1.y += momentum.y + gravity;
 
         // (Rectangle){leftStickX > 0 ? position1.x+8 : position1.x - 8, position1.y, 16*SCALE, 16*SCALE};
         Rectangle dest = {
