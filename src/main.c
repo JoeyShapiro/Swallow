@@ -84,7 +84,7 @@ int main(void)
         float leftStickY = GetGamepadAxisMovement(gamepad, GAMEPAD_AXIS_LEFT_Y);
 
         float rotation = atan2f(-leftStickY, -leftStickX)+PI;
-        frameRec2.height = leftStickX > 0 ? -16 : 16;
+        frameRec2.height = leftStickY > 0 ? -16 : 16;
 
         if (rotation > fmax) fmax = rotation;
         if (rotation < fmin) fmin = rotation;
@@ -95,7 +95,7 @@ int main(void)
 
         // position1.y += gravity;
 
-        float deltaTrigger = 5; //(rightTrigger - lastRightTrigger) * 10;
+        float deltaTrigger = (rightTrigger - lastRightTrigger) * 10;
 
         float Force_Total = k * (deltaTrigger * deltaTrigger) * wing_area;
         thrust = Force_Total * cos(rotation);
@@ -106,7 +106,7 @@ int main(void)
         //     position1.y += leftStickY * 2;
         // }
         
-        momentum.x = leftStickY > 0 ? thrust : -thrust;
+        momentum.x = leftStickY > 0 ? -thrust : thrust;
         momentum.y = leftStickY > 0 ? -lift : lift;
 
         lastRightTrigger = rightTrigger;
@@ -128,7 +128,7 @@ int main(void)
 
             ClearBackground(RAYWHITE);
             DrawTexturePro(texture, frameRec, (Rectangle){position.x, position.y, 16*SCALE, 16*SCALE}, (Vector2){0, 0}, 0, WHITE);
-            DrawTexturePro(texture, frameRec2, dest, (Vector2){16*SCALE/2, 16*SCALE/2}, (rotation-PI)*RAD2DEG, WHITE);
+            DrawTexturePro(texture, frameRec2, dest, (Vector2){16*SCALE/2, 16*SCALE/2}, (rotation+PI/2)*RAD2DEG, WHITE);
 
             if (IsGamepadAvailable(gamepad)) {
                 DrawText(GetGamepadName(gamepad), 190, 240, 20, LIGHTGRAY);
@@ -137,7 +137,7 @@ int main(void)
             }
 
             DrawText(TextFormat("trigger: %02.02f", rightTrigger), 0, 0, 20, LIGHTGRAY);
-            DrawText(TextFormat("rotation: %02.02f", (rotation-PI)*RAD2DEG), 0, 24, 20, LIGHTGRAY);
+            DrawText(TextFormat("rotation: %02.02f", (rotation+PI/2)*RAD2DEG), 0, 24, 20, LIGHTGRAY);
             DrawText(TextFormat("delta: %02.02f", deltaTrigger), 0, 48, 20, LIGHTGRAY);
             DrawText(TextFormat("Force (Total): %02.02f", Force_Total), 0, 72, 20, LIGHTGRAY);
             DrawText(TextFormat("Thrust: %02.02f", thrust), 0, 96, 20, LIGHTGRAY);
