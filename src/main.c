@@ -49,7 +49,7 @@ int main(void)
     const float gravity = 0.5;
     float lastRightTrigger = 0;
     float wing_area = 0.3;
-    float k = 0.1;
+    float k = 0.5; // arbitrary air density and "feel good" factor
     float lift = 0;
     float thrust = 0;
     Vector2 momentum = { 0, 0 };
@@ -86,16 +86,11 @@ int main(void)
         float rotation = atan2f(-leftStickY, -leftStickX)+PI;
         frameRec2.width = leftStickX > 0 ? -16 : 16;
 
-        if (rotation > fmax) fmax = rotation;
-        if (rotation < fmin) fmin = rotation;
-
         float rightTrigger = GetGamepadAxisMovement(gamepad, GAMEPAD_AXIS_RIGHT_TRIGGER);
         currentFrame2 = (((1 + rightTrigger)/2)*4); // does it all automatically
         frameRec2.x = (float)currentFrame2*16;
 
-        // position1.y += gravity;
-
-        float deltaTrigger = (rightTrigger - lastRightTrigger) * 10;
+        float deltaTrigger = (rightTrigger - lastRightTrigger) * 7;
 
         float Force_Total = k * (deltaTrigger * deltaTrigger) * wing_area;
         thrust = Force_Total * cos(rotation);
@@ -107,12 +102,15 @@ int main(void)
         // }
         
         momentum.x = leftStickY > 0 ? -thrust : thrust;
-        momentum.y = leftStickY > 0 ? -lift : lift;
+        momentum.y = leftStickY > 0 ? -lift : lift + gravity;
 
         lastRightTrigger = rightTrigger;
 
-        // position1.x += momentum.x;
-        // position1.y += momentum.y + gravity;
+        if (deltaTrigger > fmax) fmax = deltaTrigger;
+        if (deltaTrigger < fmin) fmin = deltaTrigger;
+
+        position1.x += momentum.x;
+        position1.y += momentum.y + gravity;
 
         // (Rectangle){leftStickX > 0 ? position1.x+8 : position1.x - 8, position1.y, 16*SCALE, 16*SCALE};
         Rectangle dest = {
@@ -140,10 +138,11 @@ int main(void)
             DrawText(TextFormat("rotation: %02.02f", (rotation+PI/2)*RAD2DEG), 0, 24, 20, LIGHTGRAY);
             DrawText(TextFormat("delta: %02.02f", deltaTrigger), 0, 48, 20, LIGHTGRAY);
             DrawText(TextFormat("Force (Total): %02.02f", Force_Total), 0, 72, 20, LIGHTGRAY);
-            DrawText(TextFormat("Thrust: %02.02f", thrust), 0, 96, 20, LIGHTGRAY);
-            DrawText(TextFormat("Lift: %02.02f", lift), 0, 120, 20, LIGHTGRAY);
+            DrawText(TextFormat("Thrust: %02.02f", momentum.x), 0, 96, 20, LIGHTGRAY);
+            DrawText(TextFormat("Lift: %02.02f", momentum.y), 0, 120, 20, LIGHTGRAY);
             DrawText(TextFormat("( %02.02f <-> %02.02f )", fmin, fmax), 0, 144, 20, LIGHTGRAY);
             DrawText(TextFormat("momentum: (%02.02f, %02.02f)", momentum.x*32, momentum.y*32), 0, 168, 20, LIGHTGRAY);
+            DrawText(TextFormat("fps: %d", GetFPS()), 0, 192, 20, LIGHTGRAY);
 
             DrawLine(position1.x, position1.y, position1.x+momentum.x*32, position1.y+momentum.y*32, RED);
 
