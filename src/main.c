@@ -76,15 +76,14 @@ int main(void)
             if (currentFrame > 1) currentFrame = 0;
 
             frameRec.x = (float)currentFrame*16;
-            frameRec2.x = (float)currentFrame2*16;
         }
 
         // Get axis values
         float leftStickX = GetGamepadAxisMovement(gamepad, GAMEPAD_AXIS_LEFT_X);
         float leftStickY = GetGamepadAxisMovement(gamepad, GAMEPAD_AXIS_LEFT_Y);
 
-        float rotation = atan2f(-leftStickY, -leftStickX)+PI;
-        frameRec2.width = leftStickX > 0 ? -16 : 16;
+        float rotation = atan2f(leftStickY, leftStickX)+PI;
+        frameRec2.height = leftStickX > 0 ? -16 : 16;
 
         float rightTrigger = GetGamepadAxisMovement(gamepad, GAMEPAD_AXIS_RIGHT_TRIGGER);
         currentFrame2 = (((1 + rightTrigger)/2)*4); // does it all automatically
@@ -92,25 +91,25 @@ int main(void)
 
         float deltaTrigger = (rightTrigger - lastRightTrigger) * 7;
 
-        float Force_Total = k * (deltaTrigger * deltaTrigger) * wing_area;
-        thrust = Force_Total * cos(rotation);
-        lift = Force_Total * sin(rotation);
+        float velocity = leftStickX > 0 ? 1 : -1;
 
-        // if (rightTrigger < lastRightTrigger) {
-        //     position1.x += leftStickX * 2;
-        //     position1.y += leftStickY * 2;
-        // }
+        float force = (velocity * velocity) * wing_area;
+        float coefficient_lift = 2*PI * sin(rotation) * cos(rotation);
+        lift = coefficient_lift * force;
+        // float coefficient_thrust = sin(2*rotation) * cos(rotation);
+        // thrust = coefficient_thrust * force;
+
+        // float C_D = (coefficient_lift * coefficient_lift) / PI * 0.7 * (1 / wing_area);
+        // float drag = 0.5 * force * C_D;
+        float drag = velocity * sin(rotation); // TODO make this sharp
         
-        momentum.x = leftStickY > 0 ? -thrust : thrust;
-        momentum.y = leftStickY > 0 ? -lift : lift + gravity;
+        momentum.x = velocity-drag;
+        momentum.y = lift;
 
         lastRightTrigger = rightTrigger;
 
-        if (deltaTrigger > fmax) fmax = deltaTrigger;
-        if (deltaTrigger < fmin) fmin = deltaTrigger;
-
-        position1.x += momentum.x;
-        position1.y += momentum.y + gravity;
+        if (rotation > fmax) fmax = rotation;
+        if (rotation < fmin) fmin = rotation;
 
         // (Rectangle){leftStickX > 0 ? position1.x+8 : position1.x - 8, position1.y, 16*SCALE, 16*SCALE};
         Rectangle dest = {
@@ -126,7 +125,8 @@ int main(void)
 
             ClearBackground(RAYWHITE);
             DrawTexturePro(texture, frameRec, (Rectangle){position.x, position.y, 16*SCALE, 16*SCALE}, (Vector2){0, 0}, 0, WHITE);
-            DrawTexturePro(texture, frameRec2, dest, (Vector2){16*SCALE/2, 16*SCALE/2}, (rotation+PI/2)*RAD2DEG, WHITE);
+            // TODO is it more intuitive to have head in direction you point, or direction you move?
+            DrawTexturePro(texture, frameRec2, dest, (Vector2){16*SCALE/2, 16*SCALE/2}, (rotation)*RAD2DEG, WHITE);
 
             if (IsGamepadAvailable(gamepad)) {
                 DrawText(GetGamepadName(gamepad), 190, 240, 20, LIGHTGRAY);
@@ -135,9 +135,8 @@ int main(void)
             }
 
             DrawText(TextFormat("trigger: %02.02f", rightTrigger), 0, 0, 20, LIGHTGRAY);
-            DrawText(TextFormat("rotation: %02.02f", (rotation+PI/2)*RAD2DEG), 0, 24, 20, LIGHTGRAY);
+            DrawText(TextFormat("rotation: %02.02fpi", (rotation/PI)), 0, 24, 20, LIGHTGRAY);
             DrawText(TextFormat("delta: %02.02f", deltaTrigger), 0, 48, 20, LIGHTGRAY);
-            DrawText(TextFormat("Force (Total): %02.02f", Force_Total), 0, 72, 20, LIGHTGRAY);
             DrawText(TextFormat("Thrust: %02.02f", momentum.x), 0, 96, 20, LIGHTGRAY);
             DrawText(TextFormat("Lift: %02.02f", momentum.y), 0, 120, 20, LIGHTGRAY);
             DrawText(TextFormat("( %02.02f <-> %02.02f )", fmin, fmax), 0, 144, 20, LIGHTGRAY);
