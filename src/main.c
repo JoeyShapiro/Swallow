@@ -108,18 +108,20 @@ int main(void)
         // float coefficient_thrust = sin(2*rotation) * cos(rotation);
         // thrust = coefficient_thrust * force;
         float thrust = velocity.x * ((rightTrigger + 1) / 2);
+        float penetration = 0.5 * lift * sin(rotation/2); // TODO times openness
 
         // float C_D = (coefficient_lift * coefficient_lift) / PI * 0.7 * (1 / wing_area);
         // float drag = 0.5 * force * C_D;
         // what {1, -1}[leftStickX > 0]
         Vector2 drag = {
-            .x = 0.5 * force.x * sin(rotation),
+            .x = 0.5 * force.x * sin(rotation) * (leftStickY > 0 ? -1 : 1),
             .y = 0.5 * force.y * sin(rotation) * (leftStickY > 0 ? -1 : 1),
         };
 
         lift = leftStickX > 0 ? lift : -lift;
         
-        acceleration.x = 0;//(thrust - drag) / mass;
+        // TODO not equal for both directions
+        acceleration.x = (thrust - drag.x + penetration) / mass;
         acceleration.y = (lift-drag.y) / mass - gravity;
 
         lastRightTrigger = rightTrigger;
@@ -145,7 +147,7 @@ int main(void)
             .height = 16*SCALE,
         };
         printf("rot: %02.02fpi; force: %02.02f lift: %02.02f; drag: %02.02f; accel: %02.02f; vel: %02.02f\n",
-            rotation/PI, force.y, lift, drag.y, acceleration.y, velocity.y);
+            rotation/PI, force.x, thrust, drag.x, acceleration.x, velocity.x);
         if (force.y >= 100000000 || force.y <= -100000000) {
             printf("force is NAN\n");
             return 1;
@@ -174,6 +176,7 @@ int main(void)
             DrawText(TextFormat("( %02.02f <-> %02.02f )", fmin, fmax), 0, 144, 20, LIGHTGRAY);
             DrawText(TextFormat("position: (%02.02f, %02.02f)", acceleration.x, acceleration.y), 0, 168, 20, LIGHTGRAY);
             DrawText(TextFormat("fps: %d", GetFPS()), 0, 192, 20, LIGHTGRAY);
+            DrawText(TextFormat("penetration: %02.02f", penetration), 0, 216, 20, LIGHTGRAY);
 
             DrawLine(position1.x, position1.y, position1.x+thrust*32, position1.y+lift*32, RED);
 
