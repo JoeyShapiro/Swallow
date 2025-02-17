@@ -2,6 +2,7 @@
 #include <math.h>
 #include "../res/BirdSprite.h" // 33kb
 #include "../res/Fruit.h"
+#include <stdio.h>
 
 #define SCALE 4
 
@@ -46,13 +47,15 @@ int main(void)
     int currentFrame2 = 0;
     float deltaX = 0;
     float deltaY = 0;
-    const float gravity = 0.5;
+    const float gravity = 1;
     float lastRightTrigger = 0;
     float wing_area = 0.3;
     float k = 0.5; // arbitrary air density and "feel good" factor
     float lift = 0;
     float thrust = 0;
-    Vector2 momentum = { 0, 0 };
+    float mass = 1;
+    Vector2 acceleration = { 0, 0 };
+    Vector2 velocity = { 0, 0 };
 
     float fmin = MAXFLOAT;
     float fmax = -MAXFLOAT;
@@ -91,25 +94,48 @@ int main(void)
 
         float deltaTrigger = (rightTrigger - lastRightTrigger) * 7;
 
-        float velocity = leftStickX > 0 ? 1 : -1;
+        // float speed = leftStickX > 0 ? 1 : -1;
 
-        float force = (velocity * velocity) * wing_area;
+        // bournoulli's principle
+        // accel shouldnt get crazy
+        // TODO why is force reverse sign of velocity?
+        Vector2 force = {
+            .x = (velocity.x * fabsf(velocity.x)) * wing_area,
+            .y = (velocity.y * fabsf(velocity.y)) * wing_area,
+        };
         float coefficient_lift = 2*PI * sin(rotation) * cos(rotation);
-        lift = coefficient_lift * force;
+        lift = coefficient_lift * 1;
         // float coefficient_thrust = sin(2*rotation) * cos(rotation);
         // thrust = coefficient_thrust * force;
+        float thrust = velocity.x * ((rightTrigger + 1) / 2);
 
         // float C_D = (coefficient_lift * coefficient_lift) / PI * 0.7 * (1 / wing_area);
         // float drag = 0.5 * force * C_D;
-        float drag = velocity * sin(rotation); // TODO make this sharp
+        // what {1, -1}[leftStickX > 0]
+        Vector2 drag = {
+            .x = 0.5 * force.x * sin(rotation),
+            .y = 0.5 * force.y * sin(rotation) * (leftStickY > 0 ? -1 : 1),
+        };
+
+        lift = leftStickX > 0 ? lift : -lift;
         
-        momentum.x = velocity-drag;
-        momentum.y = lift;
+        acceleration.x = 0;//(thrust - drag) / mass;
+        acceleration.y = (lift-drag.y) / mass - gravity;
 
         lastRightTrigger = rightTrigger;
 
         if (rotation > fmax) fmax = rotation;
         if (rotation < fmin) fmin = rotation;
+
+        velocity.x += acceleration.x;
+        velocity.y += acceleration.y;
+
+        // clamp velocity
+        if (velocity.x > 30) velocity.x = 30;
+        if (velocity.x < -30) velocity.x = -30;
+
+        // position1.x += velocity.x;
+        // position1.y += velocity.y;
 
         // (Rectangle){leftStickX > 0 ? position1.x+8 : position1.x - 8, position1.y, 16*SCALE, 16*SCALE};
         Rectangle dest = {
@@ -118,6 +144,12 @@ int main(void)
             .width = 16*SCALE,
             .height = 16*SCALE,
         };
+        printf("rot: %02.02fpi; force: %02.02f lift: %02.02f; drag: %02.02f; accel: %02.02f; vel: %02.02f\n",
+            rotation/PI, force.y, lift, drag.y, acceleration.y, velocity.y);
+        if (force.y >= 100000000 || force.y <= -100000000) {
+            printf("force is NAN\n");
+            return 1;
+        }
         
         // Draw
         //----------------------------------------------------------------------------------
@@ -137,13 +169,13 @@ int main(void)
             DrawText(TextFormat("trigger: %02.02f", rightTrigger), 0, 0, 20, LIGHTGRAY);
             DrawText(TextFormat("rotation: %02.02fpi", (rotation/PI)), 0, 24, 20, LIGHTGRAY);
             DrawText(TextFormat("delta: %02.02f", deltaTrigger), 0, 48, 20, LIGHTGRAY);
-            DrawText(TextFormat("Thrust: %02.02f", momentum.x), 0, 96, 20, LIGHTGRAY);
-            DrawText(TextFormat("Lift: %02.02f", momentum.y), 0, 120, 20, LIGHTGRAY);
+            DrawText(TextFormat("Thrust: %02.02f", thrust), 0, 96, 20, LIGHTGRAY);
+            DrawText(TextFormat("Lift: %02.02f - %02.02f = %02.02f", lift, drag.y, acceleration.y), 0, 120, 20, LIGHTGRAY);
             DrawText(TextFormat("( %02.02f <-> %02.02f )", fmin, fmax), 0, 144, 20, LIGHTGRAY);
-            DrawText(TextFormat("momentum: (%02.02f, %02.02f)", momentum.x*32, momentum.y*32), 0, 168, 20, LIGHTGRAY);
+            DrawText(TextFormat("position: (%02.02f, %02.02f)", acceleration.x, acceleration.y), 0, 168, 20, LIGHTGRAY);
             DrawText(TextFormat("fps: %d", GetFPS()), 0, 192, 20, LIGHTGRAY);
 
-            DrawLine(position1.x, position1.y, position1.x+momentum.x*32, position1.y+momentum.y*32, RED);
+            DrawLine(position1.x, position1.y, position1.x+thrust*32, position1.y+lift*32, RED);
 
             if (IsGamepadButtonDown(gamepad, GAMEPAD_BUTTON_MIDDLE_RIGHT)) DrawTriangle((Vector2){ 436, 168 }, (Vector2){ 436, 185 }, (Vector2){ 464, 177 }, RED);
             if (IsGamepadButtonDown(gamepad, GAMEPAD_BUTTON_RIGHT_FACE_UP)) DrawCircle(557, 144, 13, LIME);
