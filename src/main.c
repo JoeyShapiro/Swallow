@@ -3,6 +3,7 @@
 #include "../res/BirdSprite.h" // 33kb
 #include "../res/Fruit.h"
 #include <stdio.h>
+#include <string.h>
 
 #define SCALE 4
 
@@ -63,6 +64,8 @@ int main(void)
     int framesCounter = 0;
     SetTargetFPS(60);               // Set our game to run at 60 frames-per-second
     //--------------------------------------------------------------------------------------
+    char xdata[100] = { 0 };
+    char ydata[100] = { 0 };
 
     // Main game loop
     while (!WindowShouldClose())    // Detect window close button or ESC key
@@ -94,6 +97,8 @@ int main(void)
 
         float deltaTrigger = (rightTrigger - lastRightTrigger) * 7;
 
+        float extension = -(rightTrigger * rightTrigger) + 1;
+
         // float speed = leftStickX > 0 ? 1 : -1;
 
         // bournoulli's principle
@@ -108,7 +113,7 @@ int main(void)
         // float coefficient_thrust = sin(2*rotation) * cos(rotation);
         // thrust = coefficient_thrust * force;
         float thrust = velocity.x * ((rightTrigger + 1) / 2);
-        float penetration = 0.5 * lift * sin(rotation/2); // TODO times openness
+        float penetration = 0.5 * lift * sin(rotation/2) * extension;
 
         // float C_D = (coefficient_lift * coefficient_lift) / PI * 0.7 * (1 / wing_area);
         // float drag = 0.5 * force * C_D;
@@ -146,12 +151,6 @@ int main(void)
             .width = 16*SCALE,
             .height = 16*SCALE,
         };
-        printf("rot: %02.02fpi; force: %02.02f lift: %02.02f; drag: %02.02f; accel: %02.02f; vel: %02.02f\n",
-            rotation/PI, force.x, thrust, drag.x, acceleration.x, velocity.x);
-        if (force.y >= 100000000 || force.y <= -100000000) {
-            printf("force is NAN\n");
-            return 1;
-        }
         
         // Draw
         //----------------------------------------------------------------------------------
@@ -167,6 +166,20 @@ int main(void)
             } else {
                 DrawText("Gamepad not connected", 190, 220, 20, LIGHTGRAY);
             }
+
+            // x range is between -12 and -30(-inf)
+            if (framesCounter == 0) {
+                const char* tmp = TextFormat("x: rot: %02.02fpi; force: %02.02f thrust: %02.02f; drag: %02.02f; accel: %02.02f; vel: %02.02f",
+                    rotation/PI, force.x, thrust, drag.x, acceleration.x, velocity.x);
+                strcpy(xdata, tmp);
+                
+                tmp = TextFormat("y: rot: %02.02fpi; force: %02.02f lift: %02.02f; drag: %02.02f; accel: %02.02f; vel: %02.02f",
+                    rotation/PI, force.y, lift, drag.y, acceleration.y, velocity.y);
+                strcpy(ydata, tmp);
+            }
+
+            DrawText(xdata, 0, 500, 20, LIGHTGRAY);
+            DrawText(ydata, 0, 530, 20, LIGHTGRAY);
 
             DrawText(TextFormat("trigger: %02.02f", rightTrigger), 0, 0, 20, LIGHTGRAY);
             DrawText(TextFormat("rotation: %02.02fpi", (rotation/PI)), 0, 24, 20, LIGHTGRAY);
