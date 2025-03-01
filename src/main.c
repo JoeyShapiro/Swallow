@@ -112,7 +112,10 @@ int main(void)
         lift = coefficient_lift * 1;
         // float coefficient_thrust = sin(2*rotation) * cos(rotation);
         // thrust = coefficient_thrust * force;
-        float thrust = velocity.x * ((rightTrigger + 1) / 2);
+        // i could do lin alg and diff eq to get one equation, but it would be slower a^3+b^2+c
+        float thrust = fabs(sin(2*rotation));
+        thrust *= leftStickX > 0 ? 1 : -1;
+        thrust *= ((rightTrigger + 1) / 2);
         float penetration = 0.5 * lift * sin(rotation/2) * extension;
 
         // float C_D = (coefficient_lift * coefficient_lift) / PI * 0.7 * (1 / wing_area);
@@ -159,6 +162,7 @@ int main(void)
             ClearBackground(RAYWHITE);
             DrawTexturePro(texture, frameRec, (Rectangle){position.x, position.y, 16*SCALE, 16*SCALE}, (Vector2){0, 0}, 0, WHITE);
             // TODO is it more intuitive to have head in direction you point, or direction you move?
+            // TODO x goes to inf
             DrawTexturePro(texture, frameRec2, dest, (Vector2){16*SCALE/2, 16*SCALE/2}, (rotation)*RAD2DEG, WHITE);
 
             if (IsGamepadAvailable(gamepad)) {
@@ -184,14 +188,9 @@ int main(void)
             DrawText(TextFormat("trigger: %02.02f", rightTrigger), 0, 0, 20, LIGHTGRAY);
             DrawText(TextFormat("rotation: %02.02fpi", (rotation/PI)), 0, 24, 20, LIGHTGRAY);
             DrawText(TextFormat("delta: %02.02f", deltaTrigger), 0, 48, 20, LIGHTGRAY);
-            DrawText(TextFormat("Thrust: %02.02f", thrust), 0, 96, 20, LIGHTGRAY);
-            DrawText(TextFormat("Lift: %02.02f - %02.02f = %02.02f", lift, drag.y, acceleration.y), 0, 120, 20, LIGHTGRAY);
-            DrawText(TextFormat("( %02.02f <-> %02.02f )", fmin, fmax), 0, 144, 20, LIGHTGRAY);
-            DrawText(TextFormat("position: (%02.02f, %02.02f)", acceleration.x, acceleration.y), 0, 168, 20, LIGHTGRAY);
             DrawText(TextFormat("fps: %d", GetFPS()), 0, 192, 20, LIGHTGRAY);
-            DrawText(TextFormat("penetration: %02.02f", penetration), 0, 216, 20, LIGHTGRAY);
 
-            DrawLine(position1.x, position1.y, position1.x+thrust*32, position1.y+lift*32, RED);
+            DrawLine(position1.x, position1.y, position1.x+velocity.x*32, position1.y+velocity.y*32, RED);
 
             if (IsGamepadButtonDown(gamepad, GAMEPAD_BUTTON_MIDDLE_RIGHT)) DrawTriangle((Vector2){ 436, 168 }, (Vector2){ 436, 185 }, (Vector2){ 464, 177 }, RED);
             if (IsGamepadButtonDown(gamepad, GAMEPAD_BUTTON_RIGHT_FACE_UP)) DrawCircle(557, 144, 13, LIME);
