@@ -58,8 +58,8 @@ int main(void)
     Vector2 acceleration = { 0, 0 };
     Vector2 velocity = { 0, 0 };
 
-    float fmin = MAXFLOAT;
-    float fmax = -MAXFLOAT;
+    // float fmin = MAXFLOAT;
+    // float fmax = -MAXFLOAT;
 
     int framesCounter = 0;
     SetTargetFPS(60);               // Set our game to run at 60 frames-per-second
@@ -130,12 +130,12 @@ int main(void)
         
         // TODO not equal for both directions
         acceleration.x = (thrust - drag.x + penetration) / mass;
-        acceleration.y = (lift-drag.y) / mass - gravity;
+        acceleration.y = (lift-drag.y) / mass + gravity;
 
         lastRightTrigger = rightTrigger;
 
-        if (rotation > fmax) fmax = rotation;
-        if (rotation < fmin) fmin = rotation;
+        // if (rotation > fmax) fmax = rotation;
+        // if (rotation < fmin) fmin = rotation;
 
         velocity.x += acceleration.x;
         velocity.y += acceleration.y;
