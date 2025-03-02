@@ -48,7 +48,7 @@ int main(void)
     int currentFrame2 = 0;
     float deltaX = 0;
     float deltaY = 0;
-    const float gravity = 1;
+    const float gravity = 0.25;
     float lastRightTrigger = 0;
     float wing_area = 0.3;
     float k = 0.5; // arbitrary air density and "feel good" factor
@@ -108,8 +108,6 @@ int main(void)
             .x = (velocity.x * fabsf(velocity.x)) * wing_area,
             .y = (velocity.y * fabsf(velocity.y)) * wing_area,
         };
-        // TODO horizontal has 0 lift
-        // TODO cant get -lift
         // TODO cleanup. 13% cpu
         float coefficient_lift = sin(rotation) * cos(rotation);
         lift = coefficient_lift;
@@ -126,8 +124,8 @@ int main(void)
         // float drag = 0.5 * force * C_D;
         // what {1, -1}[leftStickX > 0]
         Vector2 drag = {
-            .x = 0.5 * force.x * sin(rotation) * (leftStickY > 0 ? -1 : 1),
-            .y = 0.5 * force.y * sin(rotation) * (leftStickY > 0 ? -1 : 1),
+            .x = 0.5 * force.x * sin(rotation) * (leftStickY > 0 ? -1 : 1) + (wing_area * extension),
+            .y = 0.5 * force.y * sin(rotation) * (leftStickY > 0 ? -1 : 1) + (wing_area * extension),
         };
         
         // TODO not equal for both directions
@@ -175,7 +173,7 @@ int main(void)
                 DrawLine(i-playerspace_x_offset, 0, i-playerspace_x_offset, screenHeight, LIGHTGRAY);
             }
             for (int i = 0; i < screenHeight; i+=32) {
-                DrawLine(0, i+playerspace_y_offset, screenWidth, i+playerspace_y_offset, LIGHTGRAY);
+                DrawLine(0, i-playerspace_y_offset, screenWidth, i-playerspace_y_offset, LIGHTGRAY);
             }
 
             DrawTexturePro(texture, frameRec, (Rectangle){position.x, position.y, 16*SCALE, 16*SCALE}, (Vector2){0, 0}, 0, WHITE);
