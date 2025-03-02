@@ -57,6 +57,7 @@ int main(void)
     float mass = 1;
     Vector2 acceleration = { 0, 0 };
     Vector2 velocity = { 0, 0 };
+    Vector2 camera = { 0, 0 };
 
     // float fmin = MAXFLOAT;
     // float fmax = -MAXFLOAT;
@@ -103,13 +104,16 @@ int main(void)
 
         // bournoulli's principle
         // accel shouldnt get crazy
-        // TODO why is force reverse sign of velocity?
         Vector2 force = {
             .x = (velocity.x * fabsf(velocity.x)) * wing_area,
             .y = (velocity.y * fabsf(velocity.y)) * wing_area,
         };
-        float coefficient_lift = 2*PI * sin(rotation) * cos(rotation);
-        lift = coefficient_lift * 1;
+        // TODO horizontal has 0 lift
+        // TODO cant get -lift
+        // TODO cleanup. 13% cpu
+        float coefficient_lift = sin(rotation) * cos(rotation);
+        lift = coefficient_lift;
+        lift = leftStickX > 0 ? lift : -lift;
         // float coefficient_thrust = sin(2*rotation) * cos(rotation);
         // thrust = coefficient_thrust * force;
         // i could do lin alg and diff eq to get one equation, but it would be slower a^3+b^2+c
@@ -125,8 +129,6 @@ int main(void)
             .x = 0.5 * force.x * sin(rotation) * (leftStickY > 0 ? -1 : 1),
             .y = 0.5 * force.y * sin(rotation) * (leftStickY > 0 ? -1 : 1),
         };
-
-        lift = leftStickX > 0 ? lift : -lift;
         
         // TODO not equal for both directions
         acceleration.x = (thrust - drag.x + penetration) / mass;
@@ -144,8 +146,13 @@ int main(void)
         if (velocity.x > 30) velocity.x = 30;
         if (velocity.x < -30) velocity.x = -30;
 
+        if (velocity.y > 30) velocity.y = 30;
+        if (velocity.y < -30) velocity.y = -30;
+
         // position1.x += velocity.x;
         // position1.y += velocity.y;
+        camera.x += velocity.x;
+        camera.y += velocity.y;
 
         // (Rectangle){leftStickX > 0 ? position1.x+8 : position1.x - 8, position1.y, 16*SCALE, 16*SCALE};
         Rectangle dest = {
@@ -160,9 +167,19 @@ int main(void)
         BeginDrawing();
 
             ClearBackground(RAYWHITE);
+            int playerspace_y_offset = (int)camera.y % 32;
+            int playerspace_x_offset = (int)camera.x % 32;
+
+            // draw grid
+            for (int i = 0; i < screenWidth; i+=32) {
+                DrawLine(i-playerspace_x_offset, 0, i-playerspace_x_offset, screenHeight, LIGHTGRAY);
+            }
+            for (int i = 0; i < screenHeight; i+=32) {
+                DrawLine(0, i+playerspace_y_offset, screenWidth, i+playerspace_y_offset, LIGHTGRAY);
+            }
+
             DrawTexturePro(texture, frameRec, (Rectangle){position.x, position.y, 16*SCALE, 16*SCALE}, (Vector2){0, 0}, 0, WHITE);
             // TODO is it more intuitive to have head in direction you point, or direction you move?
-            // TODO x goes to inf
             DrawTexturePro(texture, frameRec2, dest, (Vector2){16*SCALE/2, 16*SCALE/2}, (rotation)*RAD2DEG, WHITE);
 
             if (IsGamepadAvailable(gamepad)) {
