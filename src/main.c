@@ -7,6 +7,31 @@
 
 #define SCALE 4
 
+#include <mach/mach_time.h>
+#include <unistd.h>
+#include <time.h>
+
+void efficient_frame_sleep(double seconds) {
+    // Sleep for most of the time (except last 1ms)
+    useconds_t microseconds = (useconds_t)(seconds * 1000000);
+    if (microseconds > 1000) {
+        usleep(microseconds);
+    }
+    
+    // Short busy wait with ARM-optimized yield for precision
+    // mach_timebase_info_data_t timebase;
+    // mach_timebase_info(&timebase);
+    
+    // uint64_t end = mach_absolute_time() + 
+    //                (uint64_t)(seconds * 1000000000ULL) * 
+    //                timebase.denom / timebase.numer;
+    
+    // while (mach_absolute_time() < end) {
+    //     // ARM yield instruction (more power efficient than spinning)
+    //     __builtin_arm_yield();  // ARM-specific yield
+    // }
+}
+
 //------------------------------------------------------------------------------------
 // Program main entry point
 //------------------------------------------------------------------------------------
@@ -17,6 +42,7 @@ int main(void)
     const int screenWidth = 1024;
     const int screenHeight = 720;
 
+    // SetConfigFlags(FLAG_VSYNC_HINT);
     InitWindow(screenWidth, screenHeight, "Swallow");
     
     // scale texture to 2x
@@ -59,11 +85,16 @@ int main(void)
     Vector2 velocity = { 0, 0 };
     Vector2 camera = { 0, 0 };
 
+    struct timespec sleep_time;
+    sleep_time.tv_nsec = 0;
+    sleep_time.tv_sec = 0;
+
     // float fmin = MAXFLOAT;
     // float fmax = -MAXFLOAT;
 
     int framesCounter = 0;
-    SetTargetFPS(60);               // Set our game to run at 60 frames-per-second
+    // SetTargetFPS(60);               // Set our game to run at 60 frames-per-second
+    double targetFrameTime = 1.0/60.0;
     //--------------------------------------------------------------------------------------
     char xdata[100] = { 0 };
     char ydata[100] = { 0 };
@@ -71,6 +102,7 @@ int main(void)
     // Main game loop
     while (!WindowShouldClose())    // Detect window close button or ESC key
     {
+        double startTime = GetTime();
         // Update
         //----------------------------------------------------------------------------------
         framesCounter++;
@@ -108,7 +140,7 @@ int main(void)
             .x = (velocity.x * fabsf(velocity.x)) * wing_area,
             .y = (velocity.y * fabsf(velocity.y)) * wing_area,
         };
-        // TODO cleanup. 13% cpu
+        // TODO cleanup. 13% cpu, but example uses 12%
         float coefficient_lift = sin(rotation) * cos(rotation);
         lift = coefficient_lift;
         lift = leftStickX > 0 ? lift : -lift;
@@ -218,6 +250,14 @@ int main(void)
 
         EndDrawing();
         //----------------------------------------------------------------------------------
+
+        double elapsedTime = GetTime() - startTime;
+        double sleepTime = targetFrameTime - elapsedTime;
+
+        if (sleepTime > 0) {
+            sleep_time.tv_nsec = (long)(sleepTime * 1000000000);
+            nanosleep(&sleep_time, NULL);
+        }
     }
 
     // De-Initialization
