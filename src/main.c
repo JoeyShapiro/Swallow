@@ -141,6 +141,7 @@ int main(void)
             .y = (velocity.y * fabsf(velocity.y)) * wing_area,
         };
         // TODO cleanup. 13% cpu, but example uses 12%
+        // TODO no momentum
         float coefficient_lift = sin(rotation) * cos(rotation);
         lift = coefficient_lift;
         lift = leftStickX > 0 ? lift : -lift;
@@ -155,6 +156,7 @@ int main(void)
         // float C_D = (coefficient_lift * coefficient_lift) / PI * 0.7 * (1 / wing_area);
         // float drag = 0.5 * force * C_D;
         // what {1, -1}[leftStickX > 0]
+        // TODO this might be wrong
         Vector2 drag = {
             .x = 0.5 * force.x * sin(rotation) * (leftStickY > 0 ? -1 : 1) + (wing_area * extension),
             .y = 0.5 * force.y * sin(rotation) * (leftStickY > 0 ? -1 : 1) + (wing_area * extension),
